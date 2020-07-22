@@ -10,9 +10,10 @@
 # @forked-author @michealespinola https://github.com/michealespinola
 # https://github.com/michealespinola/plexupdate
 #
-# Variables
-VOLUME="/volume1"
-PLEX="$VOLUME/Plex/Library/Application Support/Plex Media Server"
+# Variables (Get location of Plex automagically and declare it as PLEX)
+PLEX=$(echo $PLEX | /usr/syno/bin/synopkg log "Plex Media Server")
+PLEX=$(echo ${PLEX%/Logs/Plex Media Server.log})
+PLEX=/$(echo ${PLEX#*/})
 #
 # Script
 mkdir "$PLEX/Updates/plexupdate" > /dev/null 2>&1
@@ -20,10 +21,10 @@ token=$(cat "$PLEX/Preferences.xml" | grep -oP 'PlexOnlineToken="\K[^"]+')
 url=$(echo "https://plex.tv/api/downloads/5.json?channel=plexpass&X-Plex-Token=$token")
 jq=$(curl -s ${url})
 curversion=$(synopkg version "Plex Media Server")
-echo 
-echo "Current Version: $curversion"
 newversion=$(echo $jq | jq -r .nas.Synology.version)
-echo " Latest Version: $newversion"
+echo 
+echo " Running Version: $curversion"
+echo "  Latest Version: $newversion"
 dpkg --compare-versions "$newversion" gt "$curversion"
 if [ $? -eq 0 ]; then
   echo 
@@ -36,8 +37,8 @@ if [ "$cpu" = "x86_64" ]; then
 else
   url=$(echo $jq | jq -r ".nas.Synology.releases[0] | .url"); package="${url##*/}"
 fi
-  echo "    New Version: $newversion"
-  echo "       New File: $package"
+  echo "     New Version: $newversion"
+  echo "     New Package: $package"
   echo 
   /bin/wget $url -c -nc -P "$PLEX/Updates/plexupdate/"
   /usr/syno/bin/synopkg stop "Plex Media Server"
@@ -47,13 +48,13 @@ fi
   dpkg --compare-versions "$nowversion" gt "$curversion"
   if [ $? -eq 0 ]; then
     echo 
-    echo "Upgrade from: $curversion"
-    echo "          to: $newversion succeeded!"
+    echo "   Upgrade from: $curversion"
+    echo "             to: $newversion succeeded!"
     echo 
   else
     echo 
-    echo "Upgrade from: $curversion"
-    echo "          to: $newversion failed!"
+    echo "   Upgrade from: $curversion"
+    echo "             to: $newversion failed!"
     echo 
   fi
 else
