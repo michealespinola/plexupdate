@@ -9,7 +9,6 @@
 #
 # @forked-author @michealespinola https://github.com/michealespinola
 # https://github.com/michealespinola/plexupdate
-# NEW VARIABLES IN CAPS BECAUSE I AM A CHILD
 #
 # Variables
 VOLUME="/volume1"
@@ -26,26 +25,26 @@ echo "Current Version: $curversion"
 newversion=$(echo $jq | jq -r .nas.Synology.version)
 echo " Latest Version: $newversion"
 dpkg --compare-versions "$newversion" gt "$curversion"
-if [ $? -eq 0 ]; then
+# if [ $? -eq 0 ]; then
   echo 
   echo New version found...
   echo 
   /usr/syno/bin/synonotify PKGHasUpgrade '{"[%HOSTNAME%]": $(hostname), "[%OSNAME%]": "Synology", "[%PKG_HAS_UPDATE%]": "Plex", "[%COMPANY_NAME%]": "Synology"}'
   cpu=$(uname -m)
 if [ "$cpu" = "x86_64" ]; then
-  url=$(echo $jq | jq -r ".nas.Synology.releases[1] | .url"); FILE="${url##*/}"
+  url=$(echo $jq | jq -r ".nas.Synology.releases[1] | .url"); package="${url##*/}"
 else
-  url=$(echo $jq | jq -r ".nas.Synology.releases[0] | .url"); FILE="${url##*/}"
+  url=$(echo $jq | jq -r ".nas.Synology.releases[0] | .url"); package="${url##*/}"
 fi
   echo "    New Version: $newversion"
-  echo "       New File: $FILE"
+  echo "       New File: $package"
   echo 
-  /bin/wget $url -c -nc -P "$PLEX/Updates/plexupdate/"
-  /usr/syno/bin/synopkg stop "Plex Media Server"
-  /usr/syno/bin/synopkg install "$PLEX/Updates/plexupdate/$FILE"
-  /usr/syno/bin/synopkg start "Plex Media Server"
+  # /bin/wget $url -c -nc -P "$PLEX/Updates/plexupdate/"
+  # /usr/syno/bin/synopkg stop "Plex Media Server"
+  # /usr/syno/bin/synopkg install "$PLEX/Updates/plexupdate/$package"
+  # /usr/syno/bin/synopkg start "Plex Media Server"
   nowversion=$(synopkg version "Plex Media Server")
-  dpkg --compare-versions "$nowversion" eq "$curversion"
+  dpkg --compare-versions "$nowversion" gt "$curversion"
   if [ $? -eq 0 ]; then
     echo 
     echo "Upgrade from: $curversion"
@@ -57,9 +56,9 @@ fi
     echo "          to: $newversion failed!"
     echo 
   fi
-else
+# else
   echo 
   echo No new version found.
   echo 
-fi
+# fi
 exit
