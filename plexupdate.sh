@@ -26,29 +26,40 @@ echo "Current Version: $curversion"
 newversion=$(echo $jq | jq -r .nas.Synology.version)
 echo " Latest Version: $newversion"
 dpkg --compare-versions "$newversion" gt "$curversion"
-if [ $? -eq "0" ]
-then
-echo 
-echo New version found...
-echo 
-/usr/syno/bin/synonotify PKGHasUpgrade '{"[%HOSTNAME%]": $(hostname), "[%OSNAME%]": "Synology", "[%PKG_HAS_UPDATE%]": "Plex", "[%COMPANY_NAME%]": "Synology"}'
-cpu=$(uname -m)
+if [ $? -eq 0 ]; then
+  echo 
+  echo New version found...
+  echo 
+  /usr/syno/bin/synonotify PKGHasUpgrade '{"[%HOSTNAME%]": $(hostname), "[%OSNAME%]": "Synology", "[%PKG_HAS_UPDATE%]": "Plex", "[%COMPANY_NAME%]": "Synology"}'
+  cpu=$(uname -m)
 if [ "$cpu" = "x86_64" ]; then
   url=$(echo $jq | jq -r ".nas.Synology.releases[1] | .url"); FILE="${url##*/}"
 else
   url=$(echo $jq | jq -r ".nas.Synology.releases[0] | .url"); FILE="${url##*/}"
 fi
-echo "    New Version: $newversion"
-echo "       New File: $FILE"
-echo 
-/bin/wget $url -c -nc -P "$PLEX/Updates/plexupdate/"
-/usr/syno/bin/synopkg stop "Plex Media Server"
-/usr/syno/bin/synopkg install "$PLEX/Updates/plexupdate/$FILE"
-/usr/syno/bin/synopkg start "Plex Media Server"
-# rm -rf "$PLEX/Updates/plexupdate/*"
+  echo "    New Version: $newversion"
+  echo "       New File: $FILE"
+  echo 
+  /bin/wget $url -c -nc -P "$PLEX/Updates/plexupdate/"
+  /usr/syno/bin/synopkg stop "Plex Media Server"
+  /usr/syno/bin/synopkg install "$PLEX/Updates/plexupdate/$FILE"
+  /usr/syno/bin/synopkg start "Plex Media Server"
+  nowversion=$(synopkg version "Plex Media Server")
+  dpkg --compare-versions "$nowversion" eq "$curversion"
+  if [ $? -eq 0 ]; then
+    echo 
+    echo "Upgrade from: $curversion"
+    echo "          to: $newversion succeeded!"
+    echo 
+  else
+    echo 
+    echo "Upgrade from: $curversion"
+    echo "          to: $newversion failed!"
+    echo 
+  fi
 else
-echo 
-echo No new version found.
-echo 
+  echo 
+  echo No new version found.
+  echo 
 fi
 exit
