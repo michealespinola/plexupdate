@@ -16,12 +16,14 @@ PLEX=$(echo ${PLEX%/Logs/Plex Media Server.log})
 PLEX=/$(echo ${PLEX#*/})
 #
 # Script
-mkdir "$PLEX/Updates/plexupdate" > /dev/null 2>&1
+echo 
+mkdir "$PLEX/Updates" > /dev/null 2>&1
 token=$(cat "$PLEX/Preferences.xml" | grep -oP 'PlexOnlineToken="\K[^"]+')
 url=$(echo "https://plex.tv/api/downloads/5.json?channel=plexpass&X-Plex-Token=$token")
 jq=$(curl -s ${url})
 curversion=$(synopkg version "Plex Media Server")
 newversion=$(echo $jq | jq -r .nas.Synology.version)
+echo "      Plex Token: $token"
 echo 
 echo " Running Version: $curversion"
 echo "  Latest Version: $newversion"
@@ -40,9 +42,9 @@ fi
   echo "     New Version: $newversion"
   echo "     New Package: $package"
   echo 
-  /bin/wget $url -c -nc -P "$PLEX/Updates/plexupdate/"
+  /bin/wget $url -c -nc -P "$PLEX/Updates/"
   /usr/syno/bin/synopkg stop "Plex Media Server"
-  /usr/syno/bin/synopkg install "$PLEX/Updates/plexupdate/$package"
+  /usr/syno/bin/synopkg install "$PLEX/Updates/$package"
   /usr/syno/bin/synopkg start "Plex Media Server"
   nowversion=$(synopkg version "Plex Media Server")
   dpkg --compare-versions "$nowversion" gt "$curversion"
