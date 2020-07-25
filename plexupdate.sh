@@ -12,7 +12,6 @@
 # Example Task 'user-defined script': bash /var/services/homes/admin/scripts/bash/plex/plexupdate/plexupdate.sh
 #
 echo 
-mkdir "$PlexFolder/Updates" > /dev/null 2>&1
 PlexFolder=$(echo $PlexFolder | /usr/syno/bin/synopkg log "Plex Media Server")
 PlexFolder=$(echo ${PlexFolder%/Logs/Plex Media Server.log})
 PlexFolder=/$(echo ${PlexFolder#*/})
@@ -21,6 +20,7 @@ DistroFile=$(echo "https://plex.tv/api/downloads/5.json?channel=plexpass&X-Plex-
 DistroJson=$(curl -s $DistroFile)
 RunVersion=$(synopkg version "Plex Media Server")
 NewVersion=$(echo $DistroJson | jq -r .nas.Synology.version)
+mkdir "$PlexFolder/Updates" > /dev/null 2>&1
 echo     " Running Version: $RunVersion"
 echo     "  Online Version: $NewVersion"
 dpkg --compare-versions "$NewVersion" gt "$RunVersion"
