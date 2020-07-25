@@ -22,7 +22,7 @@ Download the script and put it into a location of your choosing. As an example, 
 1. Enter Task: name as '`Plex Update`', and leave User: set to '`root`'
 1. Click Schedule tab and configure per your requirements
 1. Click Task Settings tab  
-1. Enter 'User-defined script' as '`/var/services/homes/admin/scripts/bash/plex/plexupdate/plexupdate.sh`' if using the above script placement example. '`/var/services/homes`' is the base location of user home directories
+1. Enter 'User-defined script' as '`bash /var/services/homes/admin/scripts/bash/plex/plexupdate/plexupdate.sh`' if using the above script placement example. '`/var/services/homes`' is the base location of user home directories
 1. Click OK 
 
 # To Do  
