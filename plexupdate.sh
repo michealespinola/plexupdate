@@ -36,7 +36,7 @@ if [ $? -eq 0 ]; then
     DwnloadUrl=$(echo $DistroJson | jq -r ".nas.Synology.releases[0] | .url"); PackageSpk="${DwnloadUrl##*/}"
   fi
   echo   "     New Package: $PackageSpk"
-  UpdateDate=$(curl -s -v --head https://downloads.plex.tv/plex-media-server-new/1.20.0.3133-fede5bdc7/synology/PlexMediaServer-1.20.0.3133-fede5bdc7-x86_64.spk 2>&1 | grep -i '^< Last-Modified:' | cut -d" " -f 3-)
+  UpdateDate=$(curl -s -v --head $DwnloadUrl 2>&1 | grep -i '^< Last-Modified:' | cut -d" " -f 3-)
   UpdateDate=$(date --date "$UpdateDate" +'%s')
   TodaysDate=$(date --date "now" +'%s')
   UpdateEpoc=$((($TodaysDate-$UpdateDate)/86400))
