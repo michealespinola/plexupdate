@@ -1,7 +1,6 @@
 #!/bin/bash
 #
 # Script to automagically update Plex Media Server on Synology NAS
-#
 # Must be run as root to natively control running services.
 #
 # @author @martinorob https://github.com/martinorob
@@ -10,58 +9,62 @@
 # @forked-author @michealespinola https://github.com/michealespinola
 # https://github.com/michealespinola/plexupdate
 #
-# Variables (Get location of Plex automagically and declare it as PLEX)
-PLEX=$(echo $PLEX | /usr/syno/bin/synopkg log "Plex Media Server")
-PLEX=$(echo ${PLEX%/Logs/Plex Media Server.log})
-PLEX=/$(echo ${PLEX#*/})
+# Example Task 'user-defined script': bash /var/services/homes/admin/scripts/bash/plex/plexupdate/plexupdate.sh
 #
-# Script
 echo 
-mkdir "$PLEX/Updates" > /dev/null 2>&1
-token=$(cat "$PLEX/Preferences.xml" | grep -oP 'PlexOnlineToken="\K[^"]+')
-url=$(echo "https://plex.tv/api/downloads/5.json?channel=plexpass&X-Plex-Token=$token")
-jq=$(curl -s ${url})
-curversion=$(synopkg version "Plex Media Server")
-newversion=$(echo $jq | jq -r .nas.Synology.version)
-echo "      Plex Token: $token"
-echo 
-echo " Running Version: $curversion"
-echo "  Latest Version: $newversion"
-dpkg --compare-versions "$newversion" gt "$curversion"
+mkdir "$PlexFolder/Updates" > /dev/null 2>&1
+PlexFolder=$(echo $PlexFolder | /usr/syno/bin/synopkg log "Plex Media Server")
+PlexFolder=$(echo ${PlexFolder%/Logs/Plex Media Server.log})
+PlexFolder=/$(echo ${PlexFolder#*/})
+PlexOToken=$(cat "$PlexFolder/Preferences.xml" | grep -oP 'PlexOnlineToken="\K[^"]+')
+DistroFile=$(echo "https://plex.tv/api/downloads/5.json?channel=plexpass&X-Plex-Token=$PlexOToken")
+DistroJson=$(curl -s $DistroFile)
+RunVersion=$(synopkg version "Plex Media Server")
+NewVersion=$(echo $DistroJson | jq -r .nas.Synology.version)
+echo     " Running Version: $RunVersion"
+echo     "     New Version: $NewVersion"
+dpkg --compare-versions "$NewVersion" gt "$RunVersion"
 if [ $? -eq 0 ]; then
   echo 
-  echo New version found...
+  echo   "New version found!"
   echo 
   /usr/syno/bin/synonotify PKGHasUpgrade '{"[%HOSTNAME%]": $(hostname), "[%OSNAME%]": "Synology", "[%PKG_HAS_UPDATE%]": "Plex", "[%COMPANY_NAME%]": "Synology"}'
   cpu=$(uname -m)
-if [ "$cpu" = "x86_64" ]; then
-  url=$(echo $jq | jq -r ".nas.Synology.releases[1] | .url"); package="${url##*/}"
-else
-  url=$(echo $jq | jq -r ".nas.Synology.releases[0] | .url"); package="${url##*/}"
-fi
-  echo "     New Version: $newversion"
-  echo "     New Package: $package"
-  echo 
-  /bin/wget $url -c -nc -P "$PLEX/Updates/"
-  /usr/syno/bin/synopkg stop "Plex Media Server"
-  /usr/syno/bin/synopkg install "$PLEX/Updates/$package"
-  /usr/syno/bin/synopkg start "Plex Media Server"
-  nowversion=$(synopkg version "Plex Media Server")
-  dpkg --compare-versions "$nowversion" gt "$curversion"
-  if [ $? -eq 0 ]; then
-    echo 
-    echo "   Upgrade from: $curversion"
-    echo "             to: $newversion succeeded!"
-    echo 
+  if [ "$cpu" = "x86_64" ]; then
+    DwnloadUrl=$(echo $DistroJson | jq -r ".nas.Synology.releases[1] | .url"); PackageSpk="${DwnloadUrl##*/}"
+  else
+    DwnloadUrl=$(echo $DistroJson | jq -r ".nas.Synology.releases[0] | .url"); PackageSpk="${DwnloadUrl##*/}"
+  fi
+  echo   "     New Package: $PackageSpk"
+  UpdateDate=$(curl -s -v --head https://downloads.plex.tv/plex-media-server-new/1.20.0.3133-fede5bdc7/synology/PlexMediaServer-1.20.0.3133-fede5bdc7-x86_64.spk 2>&1 | grep -i '^< Last-Modified:' | cut -d" " -f 3-)
+  UpdateDate=$(date --date "$UpdateDate" +'%s')
+  TodaysDate=$(date --date "now" +'%s')
+  UpdateEpoc=$((($TodaysDate-$UpdateDate)/86400))
+  echo   "    Package Date: $(date --date "@$UpdateDate")"
+  echo   "     Package Age: $UpdateEpoc days"
+  if [ $UpdateEpoc -ge 7 ]; then
+    /bin/wget $DwnloadUrl -q -c -nc -P "$PlexFolder/Updates/"
+    /usr/syno/bin/synopkg stop "Plex Media Server"
+    /usr/syno/bin/synopkg install "$PlexFolder/Updates/$PackageSpk"
+    /usr/syno/bin/synopkg start "Plex Media Server"
+    NowVersion=$(synopkg version "Plex Media Server")
+    dpkg --compare-versions "$NowVersion" gt "$RunVersion"
+    if [ $? -eq 0 ]; then
+      echo 
+      echo "    Update from: $RunVersion"
+      echo "             to: $NewVersion succeeded!"
+    else
+      echo 
+      echo "    Update from: $RunVersion"
+      echo "             to: $NewVersion failed!"
+    fi
   else
     echo 
-    echo "   Upgrade from: $curversion"
-    echo "             to: $newversion failed!"
-    echo 
+    echo   "Update newer than 7 days - skipping."
   fi
 else
   echo 
-  echo No new version found.
-  echo 
+  echo   "No new version found."
 fi
+echo 
 exit
