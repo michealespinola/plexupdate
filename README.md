@@ -2,7 +2,7 @@
 
 ### Automatically update Plex Media Server on the Synology NAS platform
 
-The intent of the fork of this script is to simply its use to not require script variable editing or SSH access to the Synology NAS. Everything should be accomplishable via the most basic DSM web administration. This script is specifically for the official Synology package of Plex Media Server. It utilizes built-in tools to self-determine everything it needs to know about where Plex is located, how to update it, and to notify the system of updates or failures to update.  If Plex is installed and properly configured, you will not have to edit this script for any details about the installation location of Plex.
+The intent of the fork of this script is to simplify its use to not require script variable editing or SSH access to the Synology NAS. Everything should be accomplishable via the most basic DSM web administration. This script is specifically for the official Synology package of Plex Media Server. It utilizes built-in tools to self-determine everything it needs to know about where Plex is located, how to update it, and to notify the system of updates or failures to update.  If Plex is installed and properly configured, you will not have to edit this script for any details about the installation location of Plex.
 
 # How-To Example
 
@@ -35,3 +35,13 @@ The code is currently hardcoded with a 7-day age requirement for installing the 
 # Thanks!
 
 Historical thanks to https://forums.plex.tv/u/j0nsplex !
+
+# Script Logic Flow:
+
+1. Identify "Plex Media Server" installation directory
+1. Create default Plex "Updates" directory if it does not exist
+1. Extract Plex Token from local Preferences file for use to lookup available updates
+1. Lookup available updates and scrape JSON data
+1. Compare currently running version information against latest online version
+1. If new version exists and is older than 7 days - Install new version
+1. Check if upgrade was successful and send appropriete notifcations
