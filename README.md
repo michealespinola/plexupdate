@@ -27,8 +27,8 @@ Download the script and put it into a location of your choosing. As an example, 
 
 # To Do  
 
-The code is currently hardcoded with a 7-day age requirement for installing the latest version as a bug/issue deterrent. This number value will soon be codifed as a parameter value. The intent of this fork is to never have to modify the base script for anything.
+The code is currently hardcoded with a 7-day age requirement for installing the latest version as a bug/issue deterrent. This number value will soon be codifed as a parameter value. The intent of this fork is to never have to modify the base script for anything and to not have to SSH to anything either.
 
 # Thanks!
 
-Historical thanks to thanks to https://forums.plex.tv/u/j0nsplex
+Historical thanks to https://forums.plex.tv/u/j0nsplex
