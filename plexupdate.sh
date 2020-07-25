@@ -22,13 +22,12 @@ DistroJson=$(curl -s $DistroFile)
 RunVersion=$(synopkg version "Plex Media Server")
 NewVersion=$(echo $DistroJson | jq -r .nas.Synology.version)
 echo     " Running Version: $RunVersion"
-echo     "     New Version: $NewVersion"
+echo     "  Online Version: $NewVersion"
 dpkg --compare-versions "$NewVersion" gt "$RunVersion"
 if [ $? -eq 0 ]; then
   echo 
   echo   "New version found!"
   echo 
-  /usr/syno/bin/synonotify PKGHasUpgrade '{"[%HOSTNAME%]": $(hostname), "[%OSNAME%]": "Synology", "[%PKG_HAS_UPDATE%]": "Plex", "[%COMPANY_NAME%]": "Synology"}'
   cpu=$(uname -m)
   if [ "$cpu" = "x86_64" ]; then
     DwnloadUrl=$(echo $DistroJson | jq -r ".nas.Synology.releases[1] | .url"); PackageSpk="${DwnloadUrl##*/}"
@@ -53,10 +52,14 @@ if [ $? -eq 0 ]; then
       echo 
       echo "    Update from: $RunVersion"
       echo "             to: $NewVersion succeeded!"
+      /usr/syno/bin/synonotify PKGHasUpgrade '{"%PKG_HAS_UPDATE%": "Plex Media Server update succeeded via Plex Update task"}'
+      ExitStatus=1
     else
       echo 
       echo "    Update from: $RunVersion"
       echo "             to: $NewVersion failed!"
+      /usr/syno/bin/synonotify PKGHasUpgrade '{"%PKG_HAS_UPDATE%": "Plex Media Server update failed via Plex Update task"}'
+      ExitStatus=1
     fi
   else
     echo 
@@ -67,4 +70,4 @@ else
   echo   "No new version found."
 fi
 echo 
-exit
+exit $ExitStatus
