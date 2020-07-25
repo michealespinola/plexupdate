@@ -1,29 +1,32 @@
 # Description  
-Automatically update Plex Media Server on Synology NAS  
+Automatically update Plex Media Server on the Synology NAS platform
 
-# How to  
-Download the script and put it into a Scheduled Task  
----Setup Download Script---  
-ssh into your nas  
-execute:   
-mkdir /volume1/Scripts  
-wget https://github.com/martinorob/plexupdate/raw/master/plexupdate.sh   
+# How-To Example
 
----Setup Update Scheduler---  
-#Comment: Go back to Synology Console  
-Open Control Panel  
-Open Task Scheduler  
-Click Create ... Scheduled Task ... User-defined script  
-Enter Task as Update Plex  
-Click Schedule Tab  
-Change Schedule to fit needs  
-Click Task Settings Tab  
-Enter User-defined script as bash /volume1/Scripts/plexupdate.sh  
-Click OK  
+## Script file placement
 
-Thanks to https://forums.plex.tv/u/j0nsplex  
+Download the script and put it into a location of your choosing. As an example, if you are using the "`admin`" account for system administration tasks, place the script within that account home folder such in a nested folder location like at:
 
-# Todo  
-Merge with   
-https://gist.github.com/seanhamlin/dcde16a164377dca87a798a4c2ea051c  
-https://forums.plex.tv/t/script-to-auto-update-plex-on-synology-nas-rev4/479748/36?u=martino  
+    \\SYNOLOGY\home\scripts\bash\plex\plexupdate\plexupdate.sh
+
+-or-
+
+    \\SYNOLOGY\homes\admin\scripts\bash\plex\plexupdate\plexupdate.sh
+
+## DSM Task Scheduler setup
+
+1. Open the [DSM](https://www.synology.com/en-global/knowledgebase/DSM/help) web interface
+1. Open the [Control Panel](https://www.synology.com/en-global/knowledgebase/DSM/help/DSM/AdminCenter/ControlPanel_desc)
+1. Open [Task Scheduler](https://www.synology.com/en-global/knowledgebase/DSM/help/DSM/AdminCenter/system_taskscheduler)
+1. Click Create -> Scheduled Task -> User-defined script  
+1. Enter Task: name as '`Plex Update`', and leave User: set to '`root`'
+1. Click Schedule tab and configure per your requirements
+1. Click Task Settings tab  
+1. Enter 'User-defined script' as '`/var/services/homes/admin/scripts/bash/plex/plexupdate/plexupdate.sh`' if using the above script placement example.
+1. Click OK 
+
+Historical thanks to thanks to https://forums.plex.tv/u/j0nsplex  
+
+# To Do  
+
+The code is currently hardcoded with a 7-day age requirement for installing the latest version as a bug/issue deterrent. This number value will soon be codifed as a parameter value. The intent of this fork is to never have to modify the base script for anything.
