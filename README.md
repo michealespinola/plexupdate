@@ -36,7 +36,7 @@ The code is currently hardcoded with a 7-day age requirement for installing the 
 
 Historical thanks to https://forums.plex.tv/u/j0nsplex !
 
-# Script Logic Flow:
+# Script Logic Flow
 
 1. Identify "Plex Media Server" installation directory
 1. Create default Plex "Updates" directory if it does not exist
