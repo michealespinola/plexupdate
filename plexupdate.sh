@@ -20,7 +20,7 @@ OldUpdates=60
 ########## NOTHING WORTH MESSING WITH BELOW HERE ##########
 #PRINT OUR GLORIOUS HEADER BECAUSE WE ARE FULL OF OURSELVES
   printf "\n"
-  printf "%s\n" "SYNO.PLEX UPDATER SCRIPT v2.1.0"
+  printf "%s\n" "SYNO.PLEX UPDATER SCRIPT v2.2.0"
   printf "\n"
 
 #CHECK IF ROOT
@@ -62,19 +62,26 @@ else
 fi
 #SCRAPE PLEX ONLINE TOKEN
 PlexOToken=$(cat "$PlexFolder/Preferences.xml" | grep -oP 'PlexOnlineToken="\K[^"]+')
-#SCRAPE PLEXPASS CHANNEL FOR NEW VERSION INFO
+
+#FUTURE FEATURE TESTING: SCRAPE PLEXPASS CHANNEL FOR NEW VERSION INFO
 DistroFile=$(echo "https://plex.tv/api/downloads/5.json?channel=plexpass&X-Plex-Token=$PlexOToken")
 DistroJson=$(curl -s $DistroFile)
 NewVersion=$(echo $DistroJson | jq                                -r '.nas.Synology.version')
 NewVerDate=$(echo $DistroJson | jq                                -r '.nas.Synology.release_date')
 NewDwnlUrl=$(echo $DistroJson | jq --arg ArchFamily "$ArchFamily" -r '.nas.Synology.releases[] | select(.build == "linux-"+$ArchFamily) | .url'); NewPackage="${NewDwnlUrl##*/}"
 
-#FUTURE FEATURE TESTING: SCRAPE PUBLIC CHANNEL FOR NEW VERSION INFO
+#SCRAPE PUBLIC CHANNEL FOR NEW VERSION INFO
 Distr1File=$(echo "https://plex.tv/api/downloads/5.json")
 Distr1Json=$(curl -s $Distr1File)
 Ne1Version=$(echo $Distr1Json | jq                                -r '.nas.Synology.version')
 Ne1VerDate=$(echo $Distr1Json | jq                                -r '.nas.Synology.release_date')
 Ne1DwnlUrl=$(echo $Distr1Json | jq --arg ArchFamily "$ArchFamily" -r '.nas.Synology.releases[] | select(.build == "linux-"+$ArchFamily) | .url'); Ne1Package="${Ne1DwnlUrl##*/}"
+
+#PROCESS PUBLIC CHANNEL VERSION INFO
+NewVersion=$Ne1Version
+NewVerDate=$Ne1VerDate
+NewDwnlUrl=$Ne1DwnlUrl
+NewPackage=$Ne1Package
 
 #CALCULATE NEW PACKAGE AGE FROM RELEASE DATE
 TodaysDate=$(date --date "now" +'%s')
@@ -89,8 +96,7 @@ RunVersion=$(synopkg version "Plex Media Server")
   printf "%14s %s\n"         "Plex Dir:" "$PlexFolder"
 # printf "%14s %s\n"       "Plex Token:" "$PlexOToken"
   printf "%14s %s\n"      "Running Ver:" "$RunVersion"
-  printf "%14s %s %s\n"  "PlexPass Ver:" "$NewVersion" "($(date --rfc-2822 --date @$NewVerDate))"
-# printf "%14s %s %s\n"    "Public Ver:" "$Ne1Version" "($(date --rfc-2822 --date @$Ne1VerDate))"
+  printf "%14s %s %s\n"    "Update Ver:" "$NewVersion" "($(date --rfc-2822 --date @$NewVerDate))"
   printf "\n"
 
 #COMPARE VERSIONS
