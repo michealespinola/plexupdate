@@ -32,7 +32,7 @@ Download the script and place it into a location of your choosing. As an example
 
 # To Do  
 
-The code is currently hardcoded (2) variables.  A 7-day age requirement for installing the latest version as a bug/issue deterrent, and a 60-day age timer for deleting old package installer files. These number values are located near the top of the script and can be modified, but will soon be codified as parameter values. This fork intends to never have to modify the base script for anything and do not have to SSH to anything either.
+The code currently has (2) hardcoded variables.  A 7-day age requirement for installing the latest version as a bug/issue deterrent, and a 60-day age timer for deleting old package installer files. These number values are located near the top of the script and can be modified, but will soon be codified as parameter values. This fork intends to never have to modify the base script for anything and do not have to SSH to anything either.
 
 # Thanks!
 
