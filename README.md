@@ -4,7 +4,7 @@
 
 ### Automatically update Plex Media Server on the Synology NAS platform
 
-The intent of the fork of this script is to simplify its use to not require script variable editing or SSH access to the Synology NAS. Everything should be accomplishable via the most basic DSM web administration. This script is specifically for the official Synology package of Plex Media Server. It utilizes built-in tools to self-determine everything it needs to know about where Plex is located, how to update it, and to notify the system of updates or failures to update.  If Plex is installed and properly configured, you will not have to edit this script for any details about the installation location of Plex.
+The fork of this script intends to further simplify its use to not require any Bash script variable editing or SSH access to the Synology NAS. Everything should be accomplishable via the most basic DSM web administration by dropping this script onto the NAS and configuring a scheduled Task. This script is specifically for the official Synology package of the Plex Media Server. It utilizes Synology's built-in tools to self-determine everything it needs to know about where Plex is located, how to update it, and to notify the system of updates or failures to update.  If Plex is installed and properly configured, you will not have to edit this script for any details about the installation location of Plex.
 
 # How-To Example
 
@@ -32,7 +32,7 @@ Download the script and place it into a location of your choosing. As an example
 
 # To Do  
 
-The code is currently hardcoded with a 7-day age requirement for installing the latest version as a bug/issue deterrent. This number value will soon be codifed as a parameter value. The intent of this fork is to never have to modify the base script for anything and to not have to SSH to anything either.
+The code is currently hardcoded (2) variables.  A 7-day age requirement for installing the latest version as a bug/issue deterrent, and a 60-day age timer for deleting old package installer files. These number values are located near the top of the script and can be modified, but will soon be codified as parameter values. This fork intends to never have to modify the base script for anything and do not have to SSH to anything either.
 
 # Thanks!
 
@@ -40,10 +40,10 @@ Historical thanks to https://forums.plex.tv/u/j0nsplex !
 
 # Script Logic Flow
 
-1. Identify "Plex Media Server" installation directory
-1. Create default Plex "Updates" directory if it does not exist
+1. Identify the "Plex Media Server" installation directory and other system-specific technical details
+1. Create default Plex "Updates" directory if it does not exist, and remove old updates installer files
 1. Extract Plex Token from local Preferences file for use to lookup available updates
-1. Lookup available updates and scrape JSON data
+1. Scrape JSON data to identify applicable updates specific to hardware architecture
 1. Compare currently running version information against latest online version
-1. If new version exists and is older than 7 days - Install new version
-1. Check if upgrade was successful and send appropriete notifcations
+1. If a new version exists and is older than the default 7-days - install the new version
+1. Check if the upgrade was successful and send appropriate notifications
