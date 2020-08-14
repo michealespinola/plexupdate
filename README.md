@@ -1,5 +1,3 @@
-![Plex.Update Logo](https://raw.githubusercontent.com/michealespinola/plexupdate/7437a9bca93d60880cd03a861e0100b462af1928/res/Syno.PLEX%20logo%20790px.png)
-
 # Description  
 
 ### Automatically update Plex Media Server on the Synology NAS platform
