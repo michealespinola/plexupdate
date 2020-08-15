@@ -20,14 +20,14 @@ OldUpdates=60
 ########## NOTHING WORTH MESSING WITH BELOW HERE ##########
 #PRINT OUR GLORIOUS HEADER BECAUSE WE ARE FULL OF OURSELVES
   printf "\n"
-  printf "%s\n" "SYNO.PLEX UPDATER SCRIPT v2.2.0"
+  printf "%s\n" "SYNO.PLEX UPDATER SCRIPT v2.3.0"
   printf "\n"
 
 #CHECK IF ROOT
 if [ "$EUID" -ne 0 ]; then
   printf " %s\n" "This script MUST be run as root - exiting..."
-  printf "\n"
   /usr/syno/bin/synonotify PKGHasUpgrade '{"%PKG_HAS_UPDATE%": "Plex Media Server update failed via Plex Update task. Script was not run as root."}'
+  printf "\n"
   exit 1
 fi
 
@@ -36,8 +36,8 @@ DSMVersion=$(                   more /etc.defaults/VERSION | grep -i 'productver
 dpkg --compare-versions "5" gt "$DSMVersion"
 if [ $? -eq 0 ]; then
   printf " %s\n" "Plex Media Server requires DSM 5.0 minimum to install - exiting..."
-  printf "\n"
   /usr/syno/bin/synonotify PKGHasUpgrade '{"%PKG_HAS_UPDATE%": "Plex Media Server update failed via Plex Update task. DSM not at least version 5.0."}'
+  printf "\n"
   exit 1
 fi
 DSMVersion=$(echo $DSMVersion-$(more /etc.defaults/VERSION | grep -i 'buildnumber='    | cut -d"\"" -f 2))
@@ -62,41 +62,41 @@ else
 fi
 #SCRAPE PLEX ONLINE TOKEN
 PlexOToken=$(cat "$PlexFolder/Preferences.xml" | grep -oP 'PlexOnlineToken="\K[^"]+')
-
-#FUTURE FEATURE TESTING: SCRAPE PLEXPASS CHANNEL FOR NEW VERSION INFO
-DistroFile=$(echo "https://plex.tv/api/downloads/5.json?channel=plexpass&X-Plex-Token=$PlexOToken")
-DistroJson=$(curl -s $DistroFile)
+#SCRAPE PLEX SERVER UPDATE CHANNEL
+PlexChannl=$(cat "$PlexFolder/Preferences.xml" | grep -oP 'ButlerUpdateChannel="\K[^"]+')
+if [ $PlexChannl -eq 0 ]; then
+# PUBLIC SERVER UPDATE CHANNEL
+  ChannlName=Public
+  ChannelUrl=$(echo "https://plex.tv/api/downloads/5.json")
+elif [ $PlexChannl -eq 8 ]; then
+# BETA SERVER UPDATE CHANNEL (REQUIRES PLEX PASS)
+  ChannlName=Beta
+  ChannelUrl=$(echo "https://plex.tv/api/downloads/5.json?channel=plexpass&X-Plex-Token=$PlexOToken")
+else
+  printf " %s\n" "Unable to indentify Server Update Channel (Public, Beta, etc) - exiting..."
+  /usr/syno/bin/synonotify PKGHasUpgrade '{"%PKG_HAS_UPDATE%": "Plex Media Server update failed to indentify Server Update Channel (Public, Beta, etc)."}'
+  printf "\n"
+  exit 1
+fi
+#SCRAPE UPDATE CHANNEL FOR UPDATE INFO
+DistroJson=$(curl -s $ChannelUrl)
 NewVersion=$(echo $DistroJson | jq                                -r '.nas.Synology.version')
 NewVerDate=$(echo $DistroJson | jq                                -r '.nas.Synology.release_date')
 NewDwnlUrl=$(echo $DistroJson | jq --arg ArchFamily "$ArchFamily" -r '.nas.Synology.releases[] | select(.build == "linux-"+$ArchFamily) | .url'); NewPackage="${NewDwnlUrl##*/}"
-
-#SCRAPE PUBLIC CHANNEL FOR NEW VERSION INFO
-Distr1File=$(echo "https://plex.tv/api/downloads/5.json")
-Distr1Json=$(curl -s $Distr1File)
-Ne1Version=$(echo $Distr1Json | jq                                -r '.nas.Synology.version')
-Ne1VerDate=$(echo $Distr1Json | jq                                -r '.nas.Synology.release_date')
-Ne1DwnlUrl=$(echo $Distr1Json | jq --arg ArchFamily "$ArchFamily" -r '.nas.Synology.releases[] | select(.build == "linux-"+$ArchFamily) | .url'); Ne1Package="${Ne1DwnlUrl##*/}"
-
-#PROCESS PUBLIC CHANNEL VERSION INFO
-NewVersion=$Ne1Version
-NewVerDate=$Ne1VerDate
-NewDwnlUrl=$Ne1DwnlUrl
-NewPackage=$Ne1Package
-
 #CALCULATE NEW PACKAGE AGE FROM RELEASE DATE
 TodaysDate=$(date --date "now" +'%s')
 PackageAge=$((($TodaysDate-$NewVerDate)/86400))
-
 #SCRAPE CURRENTLY RUNNING PMS VERSION
 RunVersion=$(synopkg version "Plex Media Server")
 
-#PRINT SOME DEBUG INFO
+#PRINT STATUS/DEBUG INFO
   printf "%14s %s\n"         "Synology:" "$SynoHModel ($ArchFamily), DSM $DSMVersion"
   printf "%14s %s\n"       "Script Dir:" "$SPUSFolder"
   printf "%14s %s\n"         "Plex Dir:" "$PlexFolder"
 # printf "%14s %s\n"       "Plex Token:" "$PlexOToken"
   printf "%14s %s\n"      "Running Ver:" "$RunVersion"
-  printf "%14s %s %s\n"    "Update Ver:" "$NewVersion" "($(date --rfc-2822 --date @$NewVerDate))"
+  printf "%14s %s %s\n"    "Update Ver:" "$NewVersion" "($ChannlName Channel)"
+  printf "%14s %s\n"     "Release Date:" "$(date --rfc-2822 --date @$NewVerDate)"
   printf "\n"
 
 #COMPARE VERSIONS
@@ -113,6 +113,8 @@ if [ $? -eq 0 ]; then
   fi
   printf " %s\n" "($MinimumAge required for install)"
   printf "\n"
+
+#INSTALL THE UPDATE
   if [ $PackageAge -ge $MinimumAge ]; then
     printf "%s\n" "INSTALLING NEW PACKAGE:"
     printf "%s\n" "----------------------------------------"
