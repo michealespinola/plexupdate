@@ -11,19 +11,19 @@
 #
 # Example Task 'user-defined script': bash /var/services/homes/admin/scripts/bash/plex/plexupdate/plexupdate.sh
 #
-########## USER CONFIGURABLE VARIABLES #################### 
-#A NEW UPDATE MUST BE THIS MANY DAYS OLD
+########## USER CONFIGURABLE VARIABLES ####################
+# A NEW UPDATE MUST BE THIS MANY DAYS OLD
 MinimumAge=7
 #SAVED PACKAGES DELETED IF OLDER THAN THIS MANY DAYS
 OldUpdates=60
 
 ########## NOTHING WORTH MESSING WITH BELOW HERE ##########
-#PRINT OUR GLORIOUS HEADER BECAUSE WE ARE FULL OF OURSELVES
-  printf "\n"
-  printf "%s\n" "SYNO.PLEX UPDATER SCRIPT v2.3.0"
-  printf "\n"
+# PRINT OUR GLORIOUS HEADER BECAUSE WE ARE FULL OF OURSELVES
+printf "\n"
+printf "%s\n" "SYNO.PLEX UPDATER SCRIPT v2.3.0"
+printf "\n"
 
-#CHECK IF ROOT
+# CHECK IF ROOT
 if [ "$EUID" -ne 0 ]; then
   printf " %s\n" "This script MUST be run as root - exiting..."
   /usr/syno/bin/synonotify PKGHasUpgrade '{"%PKG_HAS_UPDATE%": "Plex Media Server update failed via Plex Update task. Script was not run as root."}'
@@ -31,7 +31,7 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-#SCRAPE DSM VERSION AND CHECK COMPATIBILITY
+# SCRAPE DSM VERSION AND CHECK COMPATIBILITY
 DSMVersion=$(                   more /etc.defaults/VERSION | grep -i 'productversion=' | cut -d"\"" -f 2)
 dpkg --compare-versions "5" gt "$DSMVersion"
 if [ $? -eq 0 ]; then
@@ -45,13 +45,13 @@ DSMUpdateV=$(                   more /etc.defaults/VERSION | grep -i 'smallfixnu
 if [ -n "$DSMUpdateV" ]; then
   DSMVersion=$(echo $DSMVersion Update $DSMUpdateV)
 fi
-#SCRAPE SYNOLOGY HARDWARE MODEL
+# SCRAPE SYNOLOGY HARDWARE MODEL
 SynoHModel=$(more /proc/sys/kernel/syno_hw_version)
-#SCRAPE SYNOLOGY CPU ARCHITECTURE FAMILY
+# SCRAPE SYNOLOGY CPU ARCHITECTURE FAMILY
 ArchFamily=$(uname -m)
-#SCRAPE SCRIPT FOLDER LOCATION
+# SCRAPE SCRIPT FOLDER LOCATION
 SPUSFolder=$(dirname "$0")
-#SCRAPE PMS FOLDER LOCATION AND CREATE UPDATES DIR W/OLD FILE CLEANUP
+# SCRAPE PMS FOLDER LOCATION AND CREATE UPDATES DIR W/OLD FILE CLEANUP
 PlexFolder=$(echo $PlexFolder | /usr/syno/bin/synopkg log "Plex Media Server")
 PlexFolder=$(echo ${PlexFolder%/Logs/Plex Media Server.log})
 PlexFolder=/$(echo ${PlexFolder#*/})
@@ -60,16 +60,16 @@ if [ -d "$PlexFolder/Updates" ]; then
 else
   mkdir "$PlexFolder/Updates"
 fi
-#SCRAPE PLEX ONLINE TOKEN
+# SCRAPE PLEX ONLINE TOKEN
 PlexOToken=$(cat "$PlexFolder/Preferences.xml" | grep -oP 'PlexOnlineToken="\K[^"]+')
-#SCRAPE PLEX SERVER UPDATE CHANNEL
+# SCRAPE PLEX SERVER UPDATE CHANNEL
 PlexChannl=$(cat "$PlexFolder/Preferences.xml" | grep -oP 'ButlerUpdateChannel="\K[^"]+')
 if [ $PlexChannl -eq 0 ]; then
-# PUBLIC SERVER UPDATE CHANNEL
+  # PUBLIC SERVER UPDATE CHANNEL
   ChannlName=Public
   ChannelUrl=$(echo "https://plex.tv/api/downloads/5.json")
 elif [ $PlexChannl -eq 8 ]; then
-# BETA SERVER UPDATE CHANNEL (REQUIRES PLEX PASS)
+  # BETA SERVER UPDATE CHANNEL (REQUIRES PLEX PASS)
   ChannlName=Beta
   ChannelUrl=$(echo "https://plex.tv/api/downloads/5.json?channel=plexpass&X-Plex-Token=$PlexOToken")
 else
@@ -78,28 +78,28 @@ else
   printf "\n"
   exit 1
 fi
-#SCRAPE UPDATE CHANNEL FOR UPDATE INFO
+# SCRAPE UPDATE CHANNEL FOR UPDATE INFO
 DistroJson=$(curl -s $ChannelUrl)
 NewVersion=$(echo $DistroJson | jq                                -r '.nas.Synology.version')
 NewVerDate=$(echo $DistroJson | jq                                -r '.nas.Synology.release_date')
 NewDwnlUrl=$(echo $DistroJson | jq --arg ArchFamily "$ArchFamily" -r '.nas.Synology.releases[] | select(.build == "linux-"+$ArchFamily) | .url'); NewPackage="${NewDwnlUrl##*/}"
-#CALCULATE NEW PACKAGE AGE FROM RELEASE DATE
+# CALCULATE NEW PACKAGE AGE FROM RELEASE DATE
 TodaysDate=$(date --date "now" +'%s')
 PackageAge=$((($TodaysDate-$NewVerDate)/86400))
-#SCRAPE CURRENTLY RUNNING PMS VERSION
+# SCRAPE CURRENTLY RUNNING PMS VERSION
 RunVersion=$(synopkg version "Plex Media Server")
 
-#PRINT STATUS/DEBUG INFO
-  printf "%14s %s\n"         "Synology:" "$SynoHModel ($ArchFamily), DSM $DSMVersion"
-  printf "%14s %s\n"       "Script Dir:" "$SPUSFolder"
-  printf "%14s %s\n"         "Plex Dir:" "$PlexFolder"
-# printf "%14s %s\n"       "Plex Token:" "$PlexOToken"
-  printf "%14s %s\n"      "Running Ver:" "$RunVersion"
-  printf "%14s %s %s\n"    "Update Ver:" "$NewVersion" "($ChannlName Channel)"
-  printf "%14s %s\n"     "Release Date:" "$(date --rfc-2822 --date @$NewVerDate)"
-  printf "\n"
+# PRINT STATUS/DEBUG INFO
+printf "%14s %s\n"         "Synology:" "$SynoHModel ($ArchFamily), DSM $DSMVersion"
+printf "%14s %s\n"       "Script Dir:" "$SPUSFolder"
+printf "%14s %s\n"         "Plex Dir:" "$PlexFolder"
+printf "%14s %s\n"       "Plex Token:" "$PlexOToken"
+printf "%14s %s\n"      "Running Ver:" "$RunVersion"
+printf "%14s %s %s\n"    "Update Ver:" "$NewVersion" "($ChannlName Channel)"
+printf "%14s %s\n"     "Release Date:" "$(date --rfc-2822 --date @$NewVerDate)"
+printf "\n"
 
-#COMPARE VERSIONS
+# COMPARE VERSIONS
 dpkg --compare-versions "$NewVersion" gt "$RunVersion"
 if [ $? -eq 0 ]; then
   printf " %s\n" "Newer version found!"
@@ -114,7 +114,7 @@ if [ $? -eq 0 ]; then
   printf " %s\n" "($MinimumAge required for install)"
   printf "\n"
 
-#INSTALL THE UPDATE
+  # INSTALL THE UPDATE
   if [ $PackageAge -ge $MinimumAge ]; then
     printf "%s\n" "INSTALLING NEW PACKAGE:"
     printf "%s\n" "----------------------------------------"
@@ -125,11 +125,11 @@ if [ $? -eq 0 ]; then
     printf "%s\n" "----------------------------------------"
     printf "\n"
     NowVersion=$(synopkg version "Plex Media Server")
-    dpkg --compare-versions "$NowVersion" gt "$RunVersion"
-  printf "%14s %s\n"      "Update from:" "$RunVersion"
-  printf "%14s %s"                 "to:" "$NewVersion"
+    printf "%14s %s\n"      "Update from:" "$RunVersion"
+    printf "%14s %s"                 "to:" "$NewVersion"
 
-#REPORT UPDATE STATUS
+    # REPORT UPDATE STATUS
+    dpkg --compare-versions "$NowVersion" gt "$RunVersion"
     if [ $? -eq 0 ]; then
       printf " %s\n" "succeeded!"
       /usr/syno/bin/synonotify PKGHasUpgrade '{"%PKG_HAS_UPDATE%": "Plex Media Server update succeeded via Plex Update task"}'
