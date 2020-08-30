@@ -20,11 +20,11 @@ OldUpdates=60
 ########## NOTHING WORTH MESSING WITH BELOW HERE ##########
 # PRINT OUR GLORIOUS HEADER BECAUSE WE ARE FULL OF OURSELVES
 printf "\n"
-printf "%s\n" "SYNO.PLEX UPDATER SCRIPT v2.3.0"
+printf "%s\n" "SYNO.PLEX UPDATER SCRIPT v2.3.1"
 printf "\n"
 
 # CHECK IF ROOT
-if [ "$EUID" -ne 0 ]; then
+if [ "$EUID" -ne "0" ]; then
   printf " %s\n" "This script MUST be run as root - exiting..."
   /usr/syno/bin/synonotify PKGHasUpgrade '{"%PKG_HAS_UPDATE%": "Plex Media Server update failed via Plex Update task. Script was not run as root."}'
   printf "\n"
@@ -34,7 +34,7 @@ fi
 # SCRAPE DSM VERSION AND CHECK COMPATIBILITY
 DSMVersion=$(                   more /etc.defaults/VERSION | grep -i 'productversion=' | cut -d"\"" -f 2)
 dpkg --compare-versions "5" gt "$DSMVersion"
-if [ $? -eq 0 ]; then
+if [ "$?" -eq "0" ]; then
   printf " %s\n" "Plex Media Server requires DSM 5.0 minimum to install - exiting..."
   /usr/syno/bin/synonotify PKGHasUpgrade '{"%PKG_HAS_UPDATE%": "Plex Media Server update failed via Plex Update task. DSM not at least version 5.0."}'
   printf "\n"
@@ -64,20 +64,28 @@ fi
 PlexOToken=$(cat "$PlexFolder/Preferences.xml" | grep -oP 'PlexOnlineToken="\K[^"]+')
 # SCRAPE PLEX SERVER UPDATE CHANNEL
 PlexChannl=$(cat "$PlexFolder/Preferences.xml" | grep -oP 'ButlerUpdateChannel="\K[^"]+')
-if [ $PlexChannl -eq 0 ]; then
-  # PUBLIC SERVER UPDATE CHANNEL
+if [ -z "${PlexChannl+x}" ]; then
+  # DEFAULT TO PUBLIC SERVER UPDATE CHANNEL IF NULL (NEVER SET) VALUE
   ChannlName=Public
   ChannelUrl=$(echo "https://plex.tv/api/downloads/5.json")
-elif [ $PlexChannl -eq 8 ]; then
-  # BETA SERVER UPDATE CHANNEL (REQUIRES PLEX PASS)
-  ChannlName=Beta
-  ChannelUrl=$(echo "https://plex.tv/api/downloads/5.json?channel=plexpass&X-Plex-Token=$PlexOToken")
 else
-  printf " %s\n" "Unable to indentify Server Update Channel (Public, Beta, etc) - exiting..."
-  /usr/syno/bin/synonotify PKGHasUpgrade '{"%PKG_HAS_UPDATE%": "Plex Media Server update failed to indentify Server Update Channel (Public, Beta, etc)."}'
-  printf "\n"
-  exit 1
+  if [ "$PlexChannl" -eq "0" ]; then
+    # PUBLIC SERVER UPDATE CHANNEL
+    ChannlName=Public
+    ChannelUrl=$(echo "https://plex.tv/api/downloads/5.json")
+  elif [ "$PlexChannl" -eq "8" ]; then
+    # BETA SERVER UPDATE CHANNEL (REQUIRES PLEX PASS)
+    ChannlName=Beta
+    ChannelUrl=$(echo "https://plex.tv/api/downloads/5.json?channel=plexpass&X-Plex-Token=$PlexOToken")
+  else
+    # REPORT ERROR IF UNRECOGNIZED CHANNEL SELECTION
+    printf " %s\n" "Unable to indentify Server Update Channel (Public, Beta, etc) - exiting..."
+    /usr/syno/bin/synonotify PKGHasUpgrade '{"%PKG_HAS_UPDATE%": "Plex Media Server update failed to indentify Server Update Channel (Public, Beta, etc)."}'
+    printf "\n"
+    exit 1
+  fi
 fi
+
 # SCRAPE UPDATE CHANNEL FOR UPDATE INFO
 DistroJson=$(curl -s $ChannelUrl)
 NewVersion=$(echo $DistroJson | jq                                -r '.nas.Synology.version')
@@ -101,12 +109,12 @@ printf "\n"
 
 # COMPARE VERSIONS
 dpkg --compare-versions "$NewVersion" gt "$RunVersion"
-if [ $? -eq 0 ]; then
+if [ "$?" -eq "0" ]; then
   printf " %s\n" "Newer version found!"
   printf "\n"
   printf "%14s %s\n"      "New Package:" "$NewPackage"
   printf "%14s %s"        "Package Age:" "$PackageAge"
-  if [ $PackageAge -eq 1 ]; then
+  if [ "$PackageAge" -eq "1" ]; then
     printf " %s" "day"
   else
     printf " %s" "days"
@@ -130,7 +138,7 @@ if [ $? -eq 0 ]; then
 
     # REPORT UPDATE STATUS
     dpkg --compare-versions "$NowVersion" gt "$RunVersion"
-    if [ $? -eq 0 ]; then
+    if [ "$?" -eq "0" ]; then
       printf " %s\n" "succeeded!"
       /usr/syno/bin/synonotify PKGHasUpgrade '{"%PKG_HAS_UPDATE%": "Plex Media Server update succeeded via Plex Update task"}'
       ExitStatus=1
